@@ -307,21 +307,62 @@ const InventoryPage = () => {
     }
   };
 
-  const handleProductsSelected = () => {
-    const selectedItems = products
-      .filter(p => selectedProducts.includes(p.id))
-      .map(p => ({
-        id: Date.now() + Math.random(),
-        item_name: p.item_name,
-        unit: p.unit || 'g',
-        current_stock: 0,
-        min_stock: null,
-      }));
+  const handleProductsSelected = async () => {
+    try {
+      // 최신 발주 내역 조회
+      const ordersResponse = await ordersAPI.getAll({ limit: 1000 });
+      const allOrders = ordersResponse.data.data || [];
 
-    setQuickAddItems(prev => [...prev, ...selectedItems]);
-    setProductSelectModalVisible(false);
-    setSelectedProducts([]);
-    message.success(`${selectedItems.length}개 품목을 추가했습니다.`);
+      const selectedItems = products
+        .filter(p => selectedProducts.includes(p.id))
+        .map(p => {
+          // 해당 품목의 최신 발주 찾기 (날짜 기준 내림차순)
+          const itemOrders = allOrders
+            .filter(order => order.item_name === p.item_name)
+            .sort((a, b) => {
+              const dateA = a.order_date || '';
+              const dateB = b.order_date || '';
+              return dateB.localeCompare(dateA);
+            });
+
+          const latestOrder = itemOrders[0];
+          const unitCost = latestOrder
+            ? Math.round(parseFloat(latestOrder.unit_price) || 0)
+            : (p.unit_price ? Math.round(parseFloat(p.unit_price) || 0) : null);
+
+          return {
+            id: Date.now() + Math.random(),
+            item_name: p.item_name,
+            unit: p.unit || 'g',
+            current_stock: 0,
+            min_stock: null,
+            unit_cost: unitCost,
+          };
+        });
+
+      setQuickAddItems(prev => [...prev, ...selectedItems]);
+      setProductSelectModalVisible(false);
+      setSelectedProducts([]);
+      message.success(`${selectedItems.length}개 품목을 추가했습니다.`);
+    } catch (error) {
+      console.error('발주 내역 조회 실패:', error);
+      // 에러가 발생해도 기본 단가로 추가
+      const selectedItems = products
+        .filter(p => selectedProducts.includes(p.id))
+        .map(p => ({
+          id: Date.now() + Math.random(),
+          item_name: p.item_name,
+          unit: p.unit || 'g',
+          current_stock: 0,
+          min_stock: null,
+          unit_cost: p.unit_price ? Math.round(parseFloat(p.unit_price) || 0) : null,
+        }));
+
+      setQuickAddItems(prev => [...prev, ...selectedItems]);
+      setProductSelectModalVisible(false);
+      setSelectedProducts([]);
+      message.success(`${selectedItems.length}개 품목을 추가했습니다.`);
+    }
   };
 
   const handleCopyMonthClick = () => {
