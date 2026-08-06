@@ -891,7 +891,11 @@ const InventoryPage = () => {
       key: 'unit_cost',
       width: 90,
       align: 'right',
-      render: (value) => value ? `${value.toLocaleString()}원` : '-',
+      render: (value) => {
+        if (!value) return '-';
+        const amount = Math.round(parseFloat(value) || 0);
+        return `${amount.toLocaleString()}원`;
+      },
     },
     {
       title: '비고',
@@ -1903,7 +1907,11 @@ const InventoryPage = () => {
               title: '단가',
               dataIndex: 'unit_price',
               width: 100,
-              render: (price) => price ? `${price.toLocaleString()}원` : '-',
+              render: (price) => {
+                if (!price) return '-';
+                const amount = Math.round(parseFloat(price) || 0);
+                return `${amount.toLocaleString()}원`;
+              },
             },
             {
               title: '공급업체',
