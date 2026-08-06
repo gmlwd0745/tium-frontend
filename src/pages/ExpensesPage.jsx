@@ -99,7 +99,17 @@ const ExpensesPage = () => {
         selectedMonth,
         filters.store ? { store: filters.store } : {}
       );
-      setSummary(response.data);
+
+      // merchants 배열의 금액을 숫자로 변환
+      const summary = {
+        ...response.data,
+        merchants: response.data.merchants?.map(m => ({
+          ...m,
+          total_amount: Math.round(parseFloat(m.total_amount) || 0)
+        })) || []
+      };
+
+      setSummary(summary);
     } catch (error) {
       console.error('요약 정보 조회 실패:', error);
     }
@@ -254,6 +264,11 @@ const ExpensesPage = () => {
       key: 'use_date',
       width: 110,
       sorter: true,
+      render: (value) => {
+        if (!value) return '';
+        const dateStr = typeof value === 'string' ? value : value.toISOString();
+        return dateStr.split('T')[0];
+      },
     },
     {
       title: '월',
