@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Table,
   Button,
@@ -42,7 +42,7 @@ const TransactionsPage = () => {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [form] = Form.useForm();
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState({ month: dayjs().format('YYYY-MM') });
   const [selectedMonth, setSelectedMonth] = useState(dayjs().format('YYYY-MM'));
   const [selectedClient, setSelectedClient] = useState('우유'); // 선택된 거래처
   const [priceSettingVisible, setPriceSettingVisible] = useState(false); // 단가 설정 모달
@@ -91,7 +91,12 @@ const TransactionsPage = () => {
     fetchTransactions();
   }, [pagination.current, filters]);
 
+  // 필터가 빠르게 바뀌면 먼저 보낸 요청이 늦게 응답으로 와서 최신 필터 결과를
+  // 덮어쓸 수 있어, 가장 마지막 요청의 응답만 반영하도록 순번을 매긴다.
+  const fetchRequestId = useRef(0);
+
   const fetchTransactions = async () => {
+    const requestId = ++fetchRequestId.current;
     setLoading(true);
     try {
       const response = await transactionsAPI.getAll({
@@ -99,6 +104,7 @@ const TransactionsPage = () => {
         limit: pagination.pageSize,
         ...filters,
       });
+      if (requestId !== fetchRequestId.current) return; // 더 최신 요청이 이미 진행 중
       setTransactions(response.data.data);
       setPagination(prev => ({
         ...prev,
