@@ -18,6 +18,7 @@ import {
   Tag,
   Tooltip,
   Checkbox,
+  Switch,
 } from 'antd';
 import {
   PlusOutlined,
@@ -35,6 +36,30 @@ const CATEGORY_OPTIONS = ['커피', '음료', '에이드', '티', '블랜디드'
 const formatWon = (value) => {
   if (value === null || value === undefined || Number.isNaN(value)) return '-';
   return `${Math.round(value).toLocaleString()}원`;
+};
+
+// 레시피의 투입원가를 합산해 옵션별 원가를 계산 (백엔드 computeCostVariants와 동일한 로직)
+const computeCostVariantsPreview = (recipe) => {
+  const items = Array.isArray(recipe) ? recipe : [];
+  const labels = [];
+  for (const item of items) {
+    if (item && item.variantLabel && !labels.includes(item.variantLabel)) {
+      labels.push(item.variantLabel);
+    }
+  }
+  const commonCost = items
+    .filter((item) => item && !item.variantLabel)
+    .reduce((sum, item) => sum + (parseFloat(item.inputCost) || 0), 0);
+
+  if (labels.length === 0) {
+    return [{ label: null, cost: commonCost }];
+  }
+  return labels.map((label) => {
+    const optionCost = items
+      .filter((item) => item && item.variantLabel === label)
+      .reduce((sum, item) => sum + (parseFloat(item.inputCost) || 0), 0);
+    return { label, cost: commonCost + optionCost };
+  });
 };
 
 const MenuPricingPage = () => {
@@ -89,6 +114,7 @@ const MenuPricingPage = () => {
       category: '커피',
       cost_variants: [{ label: '', cost: 0 }],
       recipe: [],
+      auto_cost: true, // 새 메뉴는 레시피 기반 자동 계산을 기본값으로
     });
     setModalVisible(true);
   };
@@ -104,6 +130,8 @@ const MenuPricingPage = () => {
         ? record.cost_variants
         : [{ label: '', cost: record.cost || 0 }],
       recipe: record.recipe || [],
+      // 기존 메뉴는 엑셀 원본 원가를 그대로 유지 (직접 켜기 전까지는 자동 계산 안 함)
+      auto_cost: !!record.auto_cost,
     });
     setModalVisible(true);
   };
@@ -126,6 +154,7 @@ const MenuPricingPage = () => {
         name: values.name,
         selling_price: values.selling_price,
         notes: values.notes || '',
+        auto_cost: !!values.auto_cost,
         cost_variants: (values.cost_variants || [])
           .filter((v) => v && v.cost !== undefined && v.cost !== null)
           .map((v) => ({ label: v.label || null, cost: parseFloat(v.cost) })),
@@ -134,6 +163,7 @@ const MenuPricingPage = () => {
           .map((r) => ({
             name: r.name,
             isDisposable: !!r.isDisposable,
+            variantLabel: r.variantLabel || null,
             volume: r.volume !== undefined && r.volume !== null && r.volume !== '' ? parseFloat(r.volume) : null,
             unit: r.unit || null,
             price: r.price !== undefined && r.price !== null && r.price !== '' ? parseFloat(r.price) : null,
@@ -143,7 +173,7 @@ const MenuPricingPage = () => {
           })),
       };
 
-      if (payload.cost_variants.length === 0) {
+      if (!payload.auto_cost && payload.cost_variants.length === 0) {
         message.warning('원가를 최소 1개 이상 입력하세요.');
         return;
       }
@@ -182,6 +212,13 @@ const MenuPricingPage = () => {
         ),
       },
       { title: '품목', dataIndex: 'name', key: 'name', width: 160 },
+      {
+        title: '옵션',
+        dataIndex: 'variantLabel',
+        key: 'variantLabel',
+        width: 90,
+        render: (v) => (v ? <Tag>{v}</Tag> : <Text type="secondary" style={{ fontSize: 12 }}>공통</Text>),
+      },
       {
         title: '용량',
         key: 'volume',
@@ -250,22 +287,27 @@ const MenuPricingPage = () => {
     },
     {
       title: '원가',
-      dataIndex: 'cost_variants',
       key: 'cost_variants',
       width: 260,
-      render: (variants) => {
+      render: (_, record) => {
+        const variants = record.cost_variants;
         if (!variants || variants.length === 0) return '-';
-        if (variants.length === 1) {
-          return <Text>{formatWon(variants[0].cost)}</Text>;
-        }
+        const body = variants.length === 1
+          ? <Text>{formatWon(variants[0].cost)}</Text>
+          : (
+            <Space direction="vertical" size={0}>
+              {variants.map((v, idx) => (
+                <Text key={idx} style={{ fontSize: 12 }}>
+                  {v.label ? `${v.label}: ` : `옵션${idx + 1}: `}
+                  {formatWon(v.cost)}
+                </Text>
+              ))}
+            </Space>
+          );
         return (
-          <Space direction="vertical" size={0}>
-            {variants.map((v, idx) => (
-              <Text key={idx} style={{ fontSize: 12 }}>
-                {v.label ? `${v.label}: ` : `옵션${idx + 1}: `}
-                {formatWon(v.cost)}
-              </Text>
-            ))}
+          <Space direction="vertical" size={2}>
+            {record.auto_cost && <Tag color="green" style={{ fontSize: 11 }}>자동계산</Tag>}
+            {body}
           </Space>
         );
       },
@@ -476,34 +518,65 @@ const MenuPricingPage = () => {
             <Input placeholder="예: 아메리카노 HOT" />
           </Form.Item>
 
-          <Form.Item label="원가 (옵션별)">
-            <Form.List name="cost_variants">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                      <Form.Item {...restField} name={[name, 'label']} style={{ marginBottom: 0 }}>
-                        <Input placeholder="옵션명 (예: 올드독) - 선택" style={{ width: 160 }} />
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'cost']}
-                        style={{ marginBottom: 0 }}
-                        rules={[{ required: true, message: '원가를 입력하세요' }]}
-                      >
-                        <InputNumber min={0} placeholder="원가" style={{ width: 140 }} addonAfter="원" />
-                      </Form.Item>
-                      {fields.length > 1 && (
-                        <MinusCircleOutlined onClick={() => remove(name)} />
-                      )}
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add({ label: '', cost: 0 })} block>
-                    원가 옵션 추가
-                  </Button>
-                </>
-              )}
-            </Form.List>
+          <Form.Item name="auto_cost" label="원가 계산 방식" valuePropName="checked">
+            <Switch checkedChildren="레시피에서 자동 계산" unCheckedChildren="직접 입력" />
+          </Form.Item>
+
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.auto_cost !== cur.auto_cost || prev.recipe !== cur.recipe}>
+            {({ getFieldValue }) => {
+              const autoCost = getFieldValue('auto_cost');
+
+              if (autoCost) {
+                const preview = computeCostVariantsPreview(getFieldValue('recipe'));
+                return (
+                  <Form.Item label="원가 (자동 계산됨)">
+                    <Card size="small" style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
+                      {preview.map((v, idx) => (
+                        <div key={idx}>
+                          <Text strong>{v.label || (preview.length > 1 ? `옵션${idx + 1}` : '원가')}: </Text>
+                          <Text>{formatWon(v.cost)}</Text>
+                        </div>
+                      ))}
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        아래 레시피 항목의 투입원가 합계로 자동 계산됩니다. 특정 옵션에만 들어가는 재료는 각 항목의 "옵션명"에 입력하세요 (비우면 모든 옵션에 공통 적용).
+                      </Text>
+                    </Card>
+                  </Form.Item>
+                );
+              }
+
+              return (
+                <Form.Item label="원가 (옵션별 직접 입력)">
+                  <Form.List name="cost_variants">
+                    {(fields, { add, remove }) => (
+                      <>
+                        {fields.map(({ key, name, ...restField }) => (
+                          <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                            <Form.Item {...restField} name={[name, 'label']} style={{ marginBottom: 0 }}>
+                              <Input placeholder="옵션명 (예: 올드독) - 선택" style={{ width: 160 }} />
+                            </Form.Item>
+                            <Form.Item
+                              {...restField}
+                              name={[name, 'cost']}
+                              style={{ marginBottom: 0 }}
+                              rules={[{ required: true, message: '원가를 입력하세요' }]}
+                            >
+                              <InputNumber min={0} placeholder="원가" style={{ width: 140 }} addonAfter="원" />
+                            </Form.Item>
+                            {fields.length > 1 && (
+                              <MinusCircleOutlined onClick={() => remove(name)} />
+                            )}
+                          </Space>
+                        ))}
+                        <Button type="dashed" onClick={() => add({ label: '', cost: 0 })} block>
+                          원가 옵션 추가
+                        </Button>
+                      </>
+                    )}
+                  </Form.List>
+                </Form.Item>
+              );
+            }}
           </Form.Item>
 
           <Form.Item label="레시피 (재료/부자재)">
@@ -557,6 +630,9 @@ const MenuPricingPage = () => {
                       <Form.Item {...restField} name={[name, 'inputCost']} style={{ marginBottom: 0 }}>
                         <InputNumber placeholder="투입원가" style={{ width: 90 }} />
                       </Form.Item>
+                      <Form.Item {...restField} name={[name, 'variantLabel']} style={{ marginBottom: 0 }}>
+                        <Input placeholder="옵션명 (비우면 공통)" style={{ width: 130 }} />
+                      </Form.Item>
                       <MinusCircleOutlined onClick={() => remove(name)} />
                     </Space>
                   ))}
@@ -568,7 +644,8 @@ const MenuPricingPage = () => {
                     레시피 항목 추가
                   </Button>
                   <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>
-                    ※ 레시피 값을 바꿔도 위쪽 "원가"는 자동으로 재계산되지 않습니다. 필요하면 원가도 직접 수정하세요.
+                    ※ "원가 계산 방식"이 [직접 입력]이면 레시피는 참고용으로만 표시되고, 위 원가는 자동으로 바뀌지 않습니다.
+                    [레시피에서 자동 계산]으로 바꾸면 레시피 투입원가 합계로 원가가 자동 계산됩니다.
                   </Text>
                 </>
               )}
