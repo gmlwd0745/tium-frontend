@@ -54,7 +54,7 @@ const Layout = ({ children }) => {
     {
       key: '/transactions',
       icon: <TransactionOutlined />,
-      label: '거래금액',
+      label: '세금계산서 발행(거래내역)',
     },
   ];
 
