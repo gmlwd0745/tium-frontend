@@ -42,14 +42,14 @@ const Layout = ({ children }) => {
       label: '재고 분석',
     },
     {
-      key: '/expenses',
-      icon: <CreditCardOutlined />,
-      label: '법인카드',
-    },
-    {
       key: '/menu-pricing',
       icon: <TagsOutlined />,
       label: '메뉴 단가',
+    },
+    {
+      key: '/expenses',
+      icon: <CreditCardOutlined />,
+      label: '법인카드',
     },
     {
       key: '/transactions',
