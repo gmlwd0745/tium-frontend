@@ -70,6 +70,8 @@ const TransactionsPage = () => {
     assa: 0,
     gs: 0,
     bakery: 0,
+    desimone: 0,
+    etc: 0,
     total: 0,
   });
 
@@ -118,6 +120,12 @@ const TransactionsPage = () => {
       const bakery = Math.round(response.data.data
         .filter(t => t.client === '베이커리(하이푸디)')
         .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
+      const desimone = Math.round(response.data.data
+        .filter(t => t.client === '드시모네')
+        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
+      const etc = Math.round(response.data.data
+        .filter(t => t.client === '기타')
+        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0));
 
       setStats({
         milk,
@@ -125,7 +133,9 @@ const TransactionsPage = () => {
         assa,
         gs,
         bakery,
-        total: milk + coffee + assa + gs + bakery,
+        desimone,
+        etc,
+        total: milk + coffee + assa + gs + bakery + desimone + etc,
       });
     } catch (error) {
       message.error('거래 내역을 불러오는데 실패했습니다.');
@@ -251,7 +261,7 @@ const TransactionsPage = () => {
 
     // 임포트 전에 매장 선택하도록 모달 표시
     Modal.confirm({
-      title: '세금계산서 발행(거래내역) 엑셀 임포트',
+      title: '세금계산서(거래내역) 엑셀 임포트',
       content: (
         <div>
           <p style={{ marginBottom: 12 }}>파일: <strong>{file.name}</strong></p>
@@ -319,6 +329,8 @@ const TransactionsPage = () => {
           '아싸컴퍼니': 'orange',
           'GS 리테일': 'purple',
           '베이커리(하이푸디)': 'magenta',
+          '드시모네': 'cyan',
+          '기타': 'default',
         };
         return <Tag color={colorMap[client] || 'default'}>{client}</Tag>;
       },
@@ -397,7 +409,7 @@ const TransactionsPage = () => {
   return (
     <div>
       <Card
-        title="🔍 세금계산서 발행(거래내역) 필터"
+        title="🔍 세금계산서(거래내역) 필터"
         size="small"
         style={{
           marginBottom: 16,
@@ -462,6 +474,8 @@ const TransactionsPage = () => {
               <Select.Option value="아싸컴퍼니">아싸컴퍼니</Select.Option>
               <Select.Option value="GS 리테일">GS 리테일</Select.Option>
               <Select.Option value="베이커리(하이푸디)">베이커리(하이푸디)</Select.Option>
+              <Select.Option value="드시모네">드시모네</Select.Option>
+              <Select.Option value="기타">기타</Select.Option>
             </Select>
           </div>
 
@@ -478,8 +492,8 @@ const TransactionsPage = () => {
         </Space>
       </Card>
 
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={4}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col span={6}>
           <Card>
             <Statistic
               title="우유"
@@ -490,7 +504,7 @@ const TransactionsPage = () => {
             />
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={6}>
           <Card>
             <Statistic
               title="원두"
@@ -501,7 +515,7 @@ const TransactionsPage = () => {
             />
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={6}>
           <Card>
             <Statistic
               title="아싸컴퍼니"
@@ -512,7 +526,7 @@ const TransactionsPage = () => {
             />
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={6}>
           <Card>
             <Statistic
               title="GS 리테일"
@@ -523,7 +537,7 @@ const TransactionsPage = () => {
             />
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={6}>
           <Card>
             <Statistic
               title="베이커리(하이푸디)"
@@ -534,7 +548,29 @@ const TransactionsPage = () => {
             />
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="드시모네"
+              value={stats.desimone}
+              suffix="원"
+              valueStyle={{ color: '#13c2c2' }}
+              prefix={<DollarOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="기타"
+              value={stats.etc}
+              suffix="원"
+              valueStyle={{ color: '#8c8c8c' }}
+              prefix={<DollarOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
           <Card>
             <Statistic
               title={`${selectedMonth} 전체 합계 ${filters.store ? `(${filters.store})` : ''}`}
@@ -688,6 +724,8 @@ const TransactionsPage = () => {
               <Select.Option value="아싸컴퍼니">아싸컴퍼니</Select.Option>
               <Select.Option value="GS 리테일">GS 리테일</Select.Option>
               <Select.Option value="베이커리(하이푸디)">베이커리(하이푸디)</Select.Option>
+              <Select.Option value="드시모네">드시모네</Select.Option>
+              <Select.Option value="기타">기타</Select.Option>
             </Select>
           </Form.Item>
 
