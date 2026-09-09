@@ -40,6 +40,8 @@ const OrdersPage = () => {
   const [bulkModalVisible, setBulkModalVisible] = useState(false);
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [quickOrderModalVisible, setQuickOrderModalVisible] = useState(false);
+  const [importingOrders, setImportingOrders] = useState(false);
+  const [importingProducts, setImportingProducts] = useState(false);
   const [quickProductModalVisible, setQuickProductModalVisible] = useState(false);
   const [changeStoreModalVisible, setChangeStoreModalVisible] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
@@ -663,13 +665,17 @@ const OrdersPage = () => {
     formData.append('file', file);
     formData.append('store', '큰길');
 
+    setImportingOrders(true);
+    message.loading({ content: `"${file.name}" 업로드 및 처리 중입니다...`, key: 'orderImport', duration: 0 });
     try {
       await ordersAPI.import(formData);
-      message.success('엑셀 파일을 성공적으로 임포트했습니다.');
+      message.success({ content: '엑셀 파일을 성공적으로 임포트했습니다.', key: 'orderImport' });
       fetchOrders();
     } catch (error) {
-      message.error('엑셀 임포트에 실패했습니다.');
+      message.error({ content: '엑셀 임포트에 실패했습니다.', key: 'orderImport' });
       console.error(error);
+    } finally {
+      setImportingOrders(false);
     }
     return false;
   };
@@ -678,13 +684,17 @@ const OrdersPage = () => {
     const formData = new FormData();
     formData.append('file', file);
 
+    setImportingProducts(true);
+    message.loading({ content: `"${file.name}" 업로드 및 처리 중입니다...`, key: 'productImport', duration: 0 });
     try {
       const response = await productsAPI.import(formData);
-      message.success(`${response.data.count}개 상품이 등록되었습니다!`);
+      message.success({ content: `${response.data.count}개 상품이 등록되었습니다!`, key: 'productImport' });
       fetchProducts();
     } catch (error) {
-      message.error('상품 임포트에 실패했습니다.');
+      message.error({ content: '상품 임포트에 실패했습니다.', key: 'productImport' });
       console.error(error);
+    } finally {
+      setImportingProducts(false);
     }
     return false;
   };
@@ -881,8 +891,9 @@ const OrdersPage = () => {
           beforeUpload={handleProductImport}
           accept=".xlsx,.xls"
           showUploadList={false}
+          disabled={importingProducts}
         >
-          <Button type="dashed">
+          <Button type="dashed" loading={importingProducts}>
             📦 메뉴단가 임포트
           </Button>
         </Upload>
@@ -891,8 +902,9 @@ const OrdersPage = () => {
           beforeUpload={handleImport}
           accept=".xlsx,.xls"
           showUploadList={false}
+          disabled={importingOrders}
         >
-          <Button icon={<UploadOutlined />}>엑셀 임포트</Button>
+          <Button icon={<UploadOutlined />} loading={importingOrders}>엑셀 임포트</Button>
         </Upload>
         <Button icon={<DownloadOutlined />} onClick={handleExport}>
           엑셀 다운로드
