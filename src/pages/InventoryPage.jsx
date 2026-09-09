@@ -55,6 +55,7 @@ const InventoryPage = () => {
     '폐기': [],
   };
   const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importingInventory, setImportingInventory] = useState(false);
   const [quickAddModalVisible, setQuickAddModalVisible] = useState(false);
   const [productSelectModalVisible, setProductSelectModalVisible] = useState(false);
   const [transferModalVisible, setTransferModalVisible] = useState(false);
@@ -270,16 +271,20 @@ const InventoryPage = () => {
     formData.append('store', values.store);
     formData.append('date', values.date);
 
+    setImportingInventory(true);
+    message.loading({ content: `"${uploadedFile.name}" 업로드 및 처리 중입니다...`, key: 'inventoryImport', duration: 0 });
     try {
       const response = await inventoryAPI.import(formData);
-      message.success(response.data.message || '엑셀 파일을 성공적으로 임포트했습니다.');
+      message.success({ content: response.data.message || '엑셀 파일을 성공적으로 임포트했습니다.', key: 'inventoryImport' });
       setImportModalVisible(false);
       setUploadedFile(null);
       fetchInventory();
       fetchAlerts();
     } catch (error) {
-      message.error(error.response?.data?.error || '엑셀 임포트에 실패했습니다.');
+      message.error({ content: error.response?.data?.error || '엑셀 임포트에 실패했습니다.', key: 'inventoryImport' });
       console.error(error);
+    } finally {
+      setImportingInventory(false);
     }
   };
 
@@ -1465,6 +1470,8 @@ const InventoryPage = () => {
         open={importModalVisible}
         onCancel={() => setImportModalVisible(false)}
         onOk={() => importForm.submit()}
+        confirmLoading={importingInventory}
+        cancelButtonProps={{ disabled: importingInventory }}
         width={500}
       >
         <Form
@@ -1506,8 +1513,9 @@ const InventoryPage = () => {
               accept=".xlsx,.xls"
               maxCount={1}
               onRemove={() => setUploadedFile(null)}
+              disabled={importingInventory}
             >
-              <Button icon={<UploadOutlined />}>파일 선택</Button>
+              <Button icon={<UploadOutlined />} disabled={importingInventory}>파일 선택</Button>
             </Upload>
             {uploadedFile && (
               <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
