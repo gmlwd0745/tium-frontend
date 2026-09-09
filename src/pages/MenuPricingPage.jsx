@@ -545,36 +545,57 @@ const MenuPricingPage = () => {
                 );
               }
 
+              const preview = computeCostVariantsPreview(getFieldValue('recipe'));
+              const hasRecipe = (getFieldValue('recipe') || []).some((r) => r && r.name);
+
               return (
-                <Form.Item label="원가 (옵션별 직접 입력)">
-                  <Form.List name="cost_variants">
-                    {(fields, { add, remove }) => (
-                      <>
-                        {fields.map(({ key, name, ...restField }) => (
-                          <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                            <Form.Item {...restField} name={[name, 'label']} style={{ marginBottom: 0 }}>
-                              <Input placeholder="옵션명 (예: 올드독) - 선택" style={{ width: 160 }} />
-                            </Form.Item>
-                            <Form.Item
-                              {...restField}
-                              name={[name, 'cost']}
-                              style={{ marginBottom: 0 }}
-                              rules={[{ required: true, message: '원가를 입력하세요' }]}
-                            >
-                              <InputNumber min={0} placeholder="원가" style={{ width: 140 }} addonAfter="원" />
-                            </Form.Item>
-                            {fields.length > 1 && (
-                              <MinusCircleOutlined onClick={() => remove(name)} />
-                            )}
-                          </Space>
+                <>
+                  <Form.Item label="원가 (옵션별 직접 입력)">
+                    <Form.List name="cost_variants">
+                      {(fields, { add, remove }) => (
+                        <>
+                          {fields.map(({ key, name, ...restField }) => (
+                            <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                              <Form.Item {...restField} name={[name, 'label']} style={{ marginBottom: 0 }}>
+                                <Input placeholder="옵션명 (예: 올드독) - 선택" style={{ width: 160 }} />
+                              </Form.Item>
+                              <Form.Item
+                                {...restField}
+                                name={[name, 'cost']}
+                                style={{ marginBottom: 0 }}
+                                rules={[{ required: true, message: '원가를 입력하세요' }]}
+                              >
+                                <InputNumber min={0} placeholder="원가" style={{ width: 140 }} addonAfter="원" />
+                              </Form.Item>
+                              {fields.length > 1 && (
+                                <MinusCircleOutlined onClick={() => remove(name)} />
+                              )}
+                            </Space>
+                          ))}
+                          <Button type="dashed" onClick={() => add({ label: '', cost: 0 })} block>
+                            원가 옵션 추가
+                          </Button>
+                        </>
+                      )}
+                    </Form.List>
+                  </Form.Item>
+
+                  {hasRecipe && (
+                    <Form.Item label="레시피 합계 (참고용 미리보기)">
+                      <Card size="small" style={{ background: '#fafafa' }}>
+                        {preview.map((v, idx) => (
+                          <div key={idx}>
+                            <Text>{v.label || (preview.length > 1 ? `옵션${idx + 1}` : '레시피 합계')}: </Text>
+                            <Text strong>{formatWon(v.cost)}</Text>
+                          </div>
                         ))}
-                        <Button type="dashed" onClick={() => add({ label: '', cost: 0 })} block>
-                          원가 옵션 추가
-                        </Button>
-                      </>
-                    )}
-                  </Form.List>
-                </Form.Item>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          아래 레시피 항목을 더한 참고용 합계입니다. 위 원가에는 자동 반영되지 않으니, 이 값을 쓰려면 직접 입력하거나 "원가 계산 방식"을 [레시피에서 자동 계산]으로 바꾸세요.
+                        </Text>
+                      </Card>
+                    </Form.Item>
+                  )}
+                </>
               );
             }}
           </Form.Item>
