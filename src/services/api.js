@@ -105,4 +105,13 @@ export const inventoryHistoryAPI = {
   getStats: (params) => api.get('/inventory-history/stats', { params }),
 };
 
+// 메뉴 단가 API
+export const menuPricesAPI = {
+  getAll: (params) => api.get('/menu-prices', { params }),
+  getById: (id) => api.get(`/menu-prices/${id}`),
+  create: (data) => api.post('/menu-prices', data),
+  update: (id, data) => api.put(`/menu-prices/${id}`, data),
+  delete: (id) => api.delete(`/menu-prices/${id}`),
+};
+
 export default api;

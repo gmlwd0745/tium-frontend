@@ -10,6 +10,7 @@ import InventoryPage from './pages/InventoryPage';
 import ExpensesPage from './pages/ExpensesPage';
 import TransactionsPage from './pages/TransactionsPage';
 import InventoryAnalyticsDashboard from './pages/InventoryAnalyticsDashboard';
+import MenuPricingPage from './pages/MenuPricingPage';
 // AnalyticsPage는 아직 없으므로 DashboardPage를 사용
 import AnalyticsPage from './pages/DashboardPage';
 
@@ -30,6 +31,7 @@ function App() {
                     <Route path="/inventory" element={<InventoryPage />} />
                     <Route path="/inventory-analytics" element={<InventoryAnalyticsDashboard />} />
                     <Route path="/expenses" element={<ExpensesPage />} />
+                    <Route path="/menu-pricing" element={<MenuPricingPage />} />
                     <Route path="/transactions" element={<TransactionsPage />} />
                     <Route path="/analytics" element={<AnalyticsPage />} />
                   </Routes>

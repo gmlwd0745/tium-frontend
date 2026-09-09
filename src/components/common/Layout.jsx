@@ -10,6 +10,7 @@ import {
   BarChartOutlined,
   UserOutlined,
   LogoutOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = AntLayout;
@@ -44,6 +45,11 @@ const Layout = ({ children }) => {
       key: '/expenses',
       icon: <CreditCardOutlined />,
       label: '법인카드',
+    },
+    {
+      key: '/menu-pricing',
+      icon: <TagsOutlined />,
+      label: '메뉴 단가',
     },
     {
       key: '/transactions',
