@@ -31,6 +31,7 @@ import dayjs from 'dayjs';
 import { ordersAPI, productsAPI } from '../services/api';
 
 const { Text } = Typography;
+const { RangePicker } = DatePicker;
 
 const OrdersPage = () => {
   const [loading, setLoading] = useState(false);
@@ -821,6 +822,27 @@ const OrdersPage = () => {
           </div>
 
           <div>
+            <Text strong style={{ marginRight: 8 }}>발주일자:</Text>
+            <RangePicker
+              value={filters.startDate && filters.endDate
+                ? [dayjs(filters.startDate), dayjs(filters.endDate)]
+                : null}
+              onChange={(dates) => {
+                if (dates && dates.length === 2) {
+                  setFilters({
+                    ...filters,
+                    startDate: dates[0].format('YYYY-MM-DD'),
+                    endDate: dates[1].format('YYYY-MM-DD'),
+                  });
+                } else {
+                  const { startDate, endDate, ...rest } = filters;
+                  setFilters(rest);
+                }
+              }}
+            />
+          </div>
+
+          <div>
             <Text strong style={{ marginRight: 8 }}>공급업체:</Text>
             <Select
               style={{ width: 150 }}
@@ -849,7 +871,7 @@ const OrdersPage = () => {
             </Select>
           </div>
 
-          {(filters.store || filters.supplier) && (
+          {(filters.store || filters.supplier || filters.startDate) && (
             <Button
               type="primary"
               size="small"
