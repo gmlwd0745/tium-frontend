@@ -364,6 +364,32 @@ const TransactionsPage = () => {
       },
     },
     {
+      title: '과세구분',
+      dataIndex: 'tax_type',
+      key: 'tax_type',
+      width: 80,
+      render: (value) => {
+        if (!value) return '-';
+        return <Tag color={value === '면세' ? 'green' : 'gold'}>{value}</Tag>;
+      },
+    },
+    {
+      title: '공급가액',
+      dataIndex: 'supply_amount',
+      key: 'supply_amount',
+      width: 110,
+      align: 'right',
+      render: (value) => (value === null || value === undefined ? '-' : `${Math.round(parseFloat(value)).toLocaleString()}원`),
+    },
+    {
+      title: '부가세',
+      dataIndex: 'vat_amount',
+      key: 'vat_amount',
+      width: 100,
+      align: 'right',
+      render: (value) => (value === null || value === undefined ? '-' : `${Math.round(parseFloat(value)).toLocaleString()}원`),
+    },
+    {
       title: '결제수단',
       dataIndex: 'payment_method',
       key: 'payment_method',
@@ -680,7 +706,7 @@ const TransactionsPage = () => {
           setPagination(newPagination);
           setFilters(filters);
         }}
-        scroll={{ x: 1300 }}
+        scroll={{ x: 1600 }}
       />
 
       <Modal
