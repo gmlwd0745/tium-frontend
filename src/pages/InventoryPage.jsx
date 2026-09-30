@@ -36,6 +36,10 @@ import DuplicateCleanupModal from '../components/inventory/DuplicateCleanupModal
 
 const { Text } = Typography;
 
+// 빠른 등록에서 선택할 수 있는 기본 공급업체 목록 (품목 마스터의 공급업체와 합쳐서 사용)
+const BASE_SUPPLIERS = ['메가커피', '쿠팡', '네이버', '아싸컴퍼니', '드시모네', '매일유통', '프릳츠', '무지', '풀라이트'];
+const normalizeItemName = (name) => (name || '').toString().replace(/\s+/g, '').toLowerCase();
+
 const InventoryPage = () => {
   const [loading, setLoading] = useState(false);
   const [inventory, setInventory] = useState([]);
@@ -292,9 +296,13 @@ const InventoryPage = () => {
 
   const handleQuickAdd = () => {
     const initialItems = [
-      { id: 1, item_name: '', unit: '', current_stock: 0, min_stock: null },
+      { id: 1, item_name: '', unit: '', current_stock: 0, min_stock: null, supplier: '' },
     ];
     setQuickAddItems(initialItems);
+    // 품목명 입력 시 공급업체 자동 채움을 위해 품목 마스터를 미리 불러옴
+    productsAPI.getAll()
+      .then((response) => setProducts(response.data || []))
+      .catch((error) => console.error('품목 마스터 조회 실패:', error));
     quickAddForm.setFieldsValue({
       month: dayjs().format('YYYY-MM'),
       store: '큰길',
@@ -344,6 +352,7 @@ const InventoryPage = () => {
             current_stock: 0,
             min_stock: null,
             unit_cost: unitCost,
+            supplier: p.supplier || '',
           };
         });
 
@@ -363,6 +372,7 @@ const InventoryPage = () => {
           current_stock: 0,
           min_stock: null,
           unit_cost: p.unit_price ? Math.round(parseFloat(p.unit_price) || 0) : null,
+          supplier: p.supplier || '',
         }));
 
       setQuickAddItems(prev => [...prev, ...selectedItems]);
@@ -632,11 +642,32 @@ const InventoryPage = () => {
     }
   };
 
+  const findProductByName = (name) => {
+    const key = normalizeItemName(name);
+    if (!key) return null;
+    return (Array.isArray(products) ? products : []).find(p => normalizeItemName(p.item_name) === key) || null;
+  };
+
   const handleQuickAddItemChange = (itemId, field, value) => {
     setQuickAddItems(prev =>
-      prev.map(item => (item.id === itemId ? { ...item, [field]: value } : item))
+      prev.map(item => {
+        if (item.id !== itemId) return item;
+        const updated = { ...item, [field]: value };
+        if (field === 'item_name' && !item.supplier) {
+          const matched = findProductByName(value);
+          if (matched?.supplier) updated.supplier = matched.supplier;
+        }
+        return updated;
+      })
     );
   };
+
+  const quickAddSupplierOptions = [
+    ...new Set([
+      ...BASE_SUPPLIERS,
+      ...(Array.isArray(products) ? products : []).map(p => p.supplier).filter(Boolean),
+    ]),
+  ].map(s => ({ value: s }));
 
   const handleAddQuickAddItem = () => {
     const newItem = {
@@ -645,6 +676,7 @@ const InventoryPage = () => {
       unit: '',
       current_stock: 0,
       min_stock: null,
+      supplier: '',
     };
     setQuickAddItems(prev => [...prev, newItem]);
   };
@@ -663,19 +695,10 @@ const InventoryPage = () => {
         return;
       }
 
-      // 카테고리에 따른 기본 공급업체
-      let defaultSupplier = '';
-      if (category === '원부재료') {
-        defaultSupplier = '메가커피';
-      } else if (category === '디저트') {
-        defaultSupplier = '';
-      } else if (category === '부재료') {
-        defaultSupplier = '프릳츠';
-      } else if (category === '티백') {
-        defaultSupplier = '드시모네';
-      } else if (category === '소모품') {
-        defaultSupplier = '아싸컴퍼니';
-      }
+      // 공급업체: 행에서 선택한 값 → 없으면 품목 마스터의 공급업체 → 없으면 빈칸
+      // (예전에는 카테고리별 기본값이 들어가 부재료가 전부 '프릳츠'로 저장되는 문제가 있었음)
+      const resolveSupplier = (item) =>
+        (item.supplier || '').trim() || findProductByName(item.item_name)?.supplier || '';
 
       let successCount = 0;
       for (const item of validItems) {
@@ -691,7 +714,7 @@ const InventoryPage = () => {
           current_stock: item.current_stock || 0,
           min_stock: item.min_stock || null,
           unit_cost: null,
-          supplier: defaultSupplier,
+          supplier: resolveSupplier(item),
           notes: '',
         };
         await inventoryAPI.create(data);
@@ -1548,7 +1571,7 @@ const InventoryPage = () => {
         open={quickAddModalVisible}
         onCancel={() => setQuickAddModalVisible(false)}
         onOk={() => quickAddForm.submit()}
-        width={800}
+        width={940}
       >
         <Form
           form={quickAddForm}
@@ -1646,6 +1669,26 @@ const InventoryPage = () => {
                     value={record.unit}
                     onChange={(e) =>
                       handleQuickAddItemChange(record.id, 'unit', e.target.value)
+                    }
+                  />
+                ),
+              },
+              {
+                title: '공급업체',
+                width: 140,
+                render: (_, record) => (
+                  <AutoComplete
+                    size="small"
+                    style={{ width: '100%' }}
+                    placeholder="선택 또는 입력"
+                    options={quickAddSupplierOptions}
+                    value={record.supplier}
+                    allowClear
+                    filterOption={(inputValue, option) =>
+                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                    onChange={(value) =>
+                      handleQuickAddItemChange(record.id, 'supplier', value || '')
                     }
                   />
                 ),
