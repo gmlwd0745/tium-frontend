@@ -32,6 +32,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { inventoryAPI, inventoryHistoryAPI, productsAPI, ordersAPI } from '../services/api';
+import DuplicateCleanupModal from '../components/inventory/DuplicateCleanupModal';
 
 const { Text } = Typography;
 
@@ -66,6 +67,7 @@ const InventoryPage = () => {
   const [dailyIntakeModalVisible, setDailyIntakeModalVisible] = useState(false);
   const [dailyUsageModalVisible, setDailyUsageModalVisible] = useState(false);
   const [dailyAuditModalVisible, setDailyAuditModalVisible] = useState(false);
+  const [duplicateModalVisible, setDuplicateModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -1223,6 +1225,12 @@ const InventoryPage = () => {
         <Button icon={<DownloadOutlined />} onClick={handleExport}>
           엑셀 다운로드
         </Button>
+        <Button
+          onClick={() => setDuplicateModalVisible(true)}
+          style={{ borderColor: '#fa8c16', color: '#fa8c16' }}
+        >
+          🧹 중복 데이터 정리
+        </Button>
         {selectedRowKeys.length > 0 && (
           <>
             <Button
@@ -2122,6 +2130,17 @@ const InventoryPage = () => {
           </Card>
         </Form>
       </Modal>
+
+      <DuplicateCleanupModal
+        open={duplicateModalVisible}
+        onClose={() => setDuplicateModalVisible(false)}
+        filters={filters}
+        onDeleted={() => {
+          setSelectedRowKeys([]);
+          fetchInventory();
+          fetchAlerts();
+        }}
+      />
     </div>
   );
 };
