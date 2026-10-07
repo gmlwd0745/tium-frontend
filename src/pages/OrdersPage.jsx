@@ -796,8 +796,29 @@ const OrdersPage = () => {
     },
   };
 
+  const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+  const today = dayjs();
+  const todayLabel = `${today.format('YYYY년 M월 D일')} (${WEEKDAYS[today.day()]})`;
+  const periodLabel = filters.startDate && filters.endDate
+    ? `${dayjs(filters.startDate).format('YYYY.MM.DD')} ~ ${dayjs(filters.endDate).format('YYYY.MM.DD')}`
+    : '전체 기간';
+
   return (
     <div>
+      {/* 날짜 표시 */}
+      <Card size="small" style={{ marginBottom: 12 }}>
+        <Space size="large" wrap>
+          <span>
+            <Text type="secondary" style={{ marginRight: 8 }}>📅 오늘</Text>
+            <Text strong>{todayLabel}</Text>
+          </span>
+          <span>
+            <Text type="secondary" style={{ marginRight: 8 }}>🔎 조회 기간</Text>
+            <Text strong>{periodLabel}</Text>
+          </span>
+        </Space>
+      </Card>
+
       {/* 필터 */}
       <Card size="small" style={{ marginBottom: 16, background: '#f0f5ff' }}>
         <Space wrap>
