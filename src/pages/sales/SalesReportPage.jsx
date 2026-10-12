@@ -125,7 +125,7 @@ const SalesReportPage = () => {
 
       <Spin spinning={loading}>
         {tab === 'trend' && <TrendTab daily={daily} prevDaily={prevDaily} store={store} />}
-        {tab === 'store' && <StoreCompareTab daily={daily} overview={overview} store={store} />}
+        {tab === 'store' && <StoreCompareTab daily={daily} overview={overview} store={store} from={from} to={to} />}
         {tab === 'menu' && <MenuRankTab overview={overview} />}
         {tab === 'profit' && <ProfitTab from={from} to={to} store={store} overview={overview} />}
       </Spin>

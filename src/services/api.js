@@ -123,6 +123,7 @@ export const salesAPI = {
   getOverview: () => api.get('/sales/overview'),
   getDaily: (params) => api.get('/sales/daily', { params }),
   getHourly: (params) => api.get('/sales/hourly', { params }),
+  getHourlyRange: (params) => api.get('/sales/hourly-range', { params }),
   getProducts: (params) => api.get('/sales/products', { params }),
   getPnl: (params) => api.get('/sales/pnl', { params }),
   saveMapping: (data) => api.put('/sales/mappings', data),

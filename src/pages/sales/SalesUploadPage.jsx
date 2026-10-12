@@ -163,7 +163,7 @@ const SalesUploadPage = () => {
             <Descriptions column={1} size="small" bordered>
               <Descriptions.Item label="일자별 매출">매출 추이·매장 비교·손익 (필수)</Descriptions.Item>
               <Descriptions.Item label="상품별 매출">메뉴 순위·메뉴 원가율</Descriptions.Item>
-              <Descriptions.Item label="시간별 매출">시간대별 매장 비교</Descriptions.Item>
+              <Descriptions.Item label="시간별 매출">시간대별 매장 비교 · <b>하루 단위</b>(시작일=종료일)로 받으면 날짜별로 볼 수 있어요. 여러 날 파일을 한 번에 올려도 됩니다.</Descriptions.Item>
               <Descriptions.Item label="매장별 일자 매출">월 단위 일자 매출 (일자별 대신 사용 가능)</Descriptions.Item>
             </Descriptions>
             <Alert

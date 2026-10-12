@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Row, Col, Card, Segmented, Table, Typography, Empty, Select, Alert } from 'antd';
+import { useMemo, useState } from 'react';
+import { Row, Col, Card, Segmented, Table, Typography, Empty, Alert } from 'antd';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import dayjs from 'dayjs';
-import { salesAPI } from '../../services/api';
 import {
   STORES, STORE_COLORS, won, shortWon, pct, groupDaily, summarize, WEEKDAYS,
   axisProps, gridProps,
 } from './salesUtils';
 import { WonTooltip, Legend } from './ChartBits';
+import HourlyCard from './HourlyCard';
 
 const { Text } = Typography;
 
@@ -29,31 +29,8 @@ function GroupedBars({ data, xKey, height = 280 }) {
   );
 }
 
-const StoreCompareTab = ({ daily, overview, store }) => {
+const StoreCompareTab = ({ daily, overview, store, from, to }) => {
   const [unit, setUnit] = useState('week');
-  const [hourlyKey, setHourlyKey] = useState(null);
-  const [hourly, setHourly] = useState([]);
-
-  // 시간별 데이터셋: 기간 단위로 묶기 (매장별로 저장되어 있음)
-  const hourlyPeriods = useMemo(() => {
-    const m = new Map();
-    for (const d of overview?.hourly || []) {
-      const k = `${d.period_start}|${d.period_end}`;
-      if (!m.has(k)) m.set(k, { ...d, store: STORES.filter((s) => (overview.hourly || []).some((x) => `${x.period_start}|${x.period_end}` === k && x.store === s)).join('·') });
-    }
-    return [...m.values()];
-  }, [overview]);
-
-  useEffect(() => {
-    if (!hourlyKey && hourlyPeriods.length) setHourlyKey(`${hourlyPeriods[0].period_start}|${hourlyPeriods[0].period_end}`);
-  }, [hourlyPeriods, hourlyKey]);
-
-  useEffect(() => {
-    if (!hourlyKey) return;
-    const [periodStart, periodEnd] = hourlyKey.split('|');
-    salesAPI.getHourly({ periodStart, periodEnd }).then((res) => setHourly(res.data)).catch(() => setHourly([]));
-  }, [hourlyKey]);
-
   const perStore = useMemo(
     () => STORES.map((s) => ({ store: s, rows: daily.filter((r) => r.store === s) })).map((x) => ({ ...x, ...summarize(x.rows) })),
     [daily]
@@ -78,16 +55,6 @@ const StoreCompareTab = ({ daily, overview, store }) => {
         return o;
       });
   }, [daily]);
-
-  const hourlyData = useMemo(() => {
-    const m = new Map();
-    for (const r of hourly) {
-      if (!m.has(r.hour)) m.set(r.hour, { hour: r.hour, label: `${r.hour}시` });
-      m.get(r.hour)[r.store] = r.total_amount;
-      m.get(r.hour)[`${r.store}_receipts`] = r.receipt_count;
-    }
-    return [...m.values()].sort((a, b) => a.hour - b.hour);
-  }, [hourly]);
 
   if (!daily.length) return <Empty description="선택한 기간에 일자별 매출이 없습니다." />;
 
@@ -121,28 +88,14 @@ const StoreCompareTab = ({ daily, overview, store }) => {
       </Card>
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} lg={12}>
+        <Col xs={24} xl={10}>
           <Card size="small" title="요일별 평균 매출 (영업일 기준)">
             <Legend items={STORES.map((s) => ({ label: s, color: STORE_COLORS[s] }))} />
-            <GroupedBars data={weekday} xKey="label" height={240} />
+            <GroupedBars data={weekday} xKey="label" height={260} />
           </Card>
         </Col>
-        <Col xs={24} lg={12}>
-          <Card size="small" title="시간대별 매출"
-            extra={hourlyPeriods.length > 0 && (
-              <Select size="small" value={hourlyKey} onChange={setHourlyKey} style={{ minWidth: 190 }}
-                options={hourlyPeriods.map((d) => ({ value: `${d.period_start}|${d.period_end}`, label: `${d.period_start} ~ ${d.period_end}` }))} />
-            )}>
-            {hourlyData.length ? (
-              <>
-                <Legend items={STORES.map((s) => ({ label: s, color: STORE_COLORS[s] }))} />
-                <GroupedBars data={hourlyData} xKey="label" height={240} />
-                <Text type="secondary">시간별 매출 파일의 기간 기준 (위 날짜 선택과 별개)</Text>
-              </>
-            ) : (
-              <Empty description="시간별 매출 파일을 올리면 표시됩니다." />
-            )}
-          </Card>
+        <Col xs={24} xl={14}>
+          <HourlyCard from={from} to={to} overview={overview} />
         </Col>
       </Row>
 
