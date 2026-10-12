@@ -11,6 +11,10 @@ import {
   UserOutlined,
   LogoutOutlined,
   TagsOutlined,
+  RiseOutlined,
+  LineChartOutlined,
+  UploadOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = AntLayout;
@@ -20,6 +24,7 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // 메뉴를 업무 흐름별로 묶음: 매출 → 매입·비용 → 재고
   const menuItems = [
     {
       key: '/',
@@ -27,36 +32,40 @@ const Layout = ({ children }) => {
       label: '홈',
     },
     {
-      key: '/orders',
-      icon: <ShoppingCartOutlined />,
-      label: '발주 관리',
+      key: 'grp-sales',
+      icon: <RiseOutlined />,
+      label: '매출',
+      children: [
+        { key: '/sales', icon: <LineChartOutlined />, label: '매출 리포트' },
+        { key: '/sales/upload', icon: <UploadOutlined />, label: '매출 업로드' },
+        { key: '/menu-pricing', icon: <TagsOutlined />, label: '메뉴 단가·원가' },
+      ],
     },
     {
-      key: '/inventory',
+      key: 'grp-cost',
+      icon: <WalletOutlined />,
+      label: '매입·비용',
+      children: [
+        { key: '/orders', icon: <ShoppingCartOutlined />, label: '발주 관리' },
+        { key: '/transactions', icon: <TransactionOutlined />, label: '세금계산서(거래내역)' },
+        { key: '/expenses', icon: <CreditCardOutlined />, label: '법인카드' },
+      ],
+    },
+    {
+      key: 'grp-stock',
       icon: <InboxOutlined />,
-      label: '재고 관리',
-    },
-    {
-      key: '/inventory-analytics',
-      icon: <BarChartOutlined />,
-      label: '재고 분석',
-    },
-    {
-      key: '/menu-pricing',
-      icon: <TagsOutlined />,
-      label: '메뉴 단가',
-    },
-    {
-      key: '/expenses',
-      icon: <CreditCardOutlined />,
-      label: '법인카드',
-    },
-    {
-      key: '/transactions',
-      icon: <TransactionOutlined />,
-      label: '세금계산서(거래내역)',
+      label: '재고',
+      children: [
+        { key: '/inventory', icon: <InboxOutlined />, label: '재고 관리' },
+        { key: '/inventory-analytics', icon: <BarChartOutlined />, label: '재고 분석' },
+      ],
     },
   ];
+
+  // 상단 제목 표시용 (하위 메뉴까지 펼친 목록)
+  const flatItems = menuItems.flatMap((item) => (item.children ? item.children.map((c) => ({ ...c, group: item.label })) : [item]));
+  const currentItem = flatItems.find((item) => item.key === location.pathname);
+  const [openKeys, setOpenKeys] = useState(['grp-sales', 'grp-cost', 'grp-stock']);
 
   const handleMenuClick = ({ key }) => {
     navigate(key);
@@ -86,6 +95,8 @@ const Layout = ({ children }) => {
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
+        breakpoint="md"
+        onBreakpoint={(broken) => setCollapsed(broken)}
         theme="dark"
       >
         <div style={{
@@ -103,7 +114,9 @@ const Layout = ({ children }) => {
           theme="dark"
           selectedKeys={[location.pathname]}
           mode="inline"
+          style={{ textAlign: 'left' }}
           items={menuItems}
+          {...(collapsed ? {} : { openKeys, onOpenChange: setOpenKeys })}
           onClick={handleMenuClick}
         />
       </Sider>
@@ -117,7 +130,12 @@ const Layout = ({ children }) => {
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         }}>
           <div style={{ fontSize: 18, fontWeight: 500 }}>
-            {menuItems.find(item => item.key === location.pathname)?.label || '틔움 관리자 페이지'}
+            {currentItem ? (
+              <>
+                {currentItem.group && <span style={{ color: '#999', fontWeight: 400 }}>{currentItem.group} / </span>}
+                {currentItem.label}
+              </>
+            ) : '틔움 관리자 페이지'}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ color: '#666' }}>

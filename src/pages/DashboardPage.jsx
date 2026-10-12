@@ -26,6 +26,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { transactionsAPI, expensesAPI, ordersAPI, inventoryAPI } from '../services/api';
+import SalesSummaryRow from '../components/sales/SalesSummaryRow';
 
 const { Title, Text } = Typography;
 
@@ -384,6 +385,9 @@ const DashboardPage = () => {
             style={{ marginBottom: 24 }}
           />
         )}
+
+        {/* 매출 요약 (POS 매출 업로드 데이터) */}
+        <SalesSummaryRow month={selectedMonth} store={selectedStore} />
 
         {/* 주요 지표 - 5개 */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>

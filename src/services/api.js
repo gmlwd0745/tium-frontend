@@ -114,4 +114,20 @@ export const menuPricesAPI = {
   delete: (id) => api.delete(`/menu-prices/${id}`),
 };
 
+// 매출 리포트 API (POS 매출 파일 업로드 / 조회)
+export const salesAPI = {
+  upload: (formData) => api.post('/sales/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  getUploads: (params) => api.get('/sales/uploads', { params }),
+  getOverview: () => api.get('/sales/overview'),
+  getDaily: (params) => api.get('/sales/daily', { params }),
+  getHourly: (params) => api.get('/sales/hourly', { params }),
+  getProducts: (params) => api.get('/sales/products', { params }),
+  getPnl: (params) => api.get('/sales/pnl', { params }),
+  saveMapping: (data) => api.put('/sales/mappings', data),
+  deleteDataset: (params) => api.delete('/sales/dataset', { params }),
+  deleteDaily: (params) => api.delete('/sales/daily', { params }),
+};
+
 export default api;

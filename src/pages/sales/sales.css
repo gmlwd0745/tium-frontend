@@ -1,0 +1,7 @@
+/* 매출 페이지 전용 스타일 (다른 페이지에는 영향 없음) */
+.sales-page {
+  text-align: left;
+}
+.sales-page .ant-table-cell {
+  white-space: nowrap;
+}
