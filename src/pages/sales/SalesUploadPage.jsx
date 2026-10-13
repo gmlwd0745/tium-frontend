@@ -14,8 +14,8 @@ import { won } from './salesUtils';
 const { Title, Text, Paragraph } = Typography;
 const { Dragger } = Upload;
 
-const TYPE_LABEL = { daily: '일자별 매출', products: '상품별 매출', hourly: '시간별 매출' };
-const TYPE_COLOR = { daily: 'blue', products: 'purple', hourly: 'cyan' };
+const TYPE_LABEL = { daily: '일자별 매출', products: '상품별 매출', hourly: '시간별 매출', product_daily: '일자별 상품 매출' };
+const TYPE_COLOR = { daily: 'blue', products: 'purple', hourly: 'cyan', product_daily: 'green' };
 
 const SalesUploadPage = () => {
   const navigate = useNavigate();
@@ -164,6 +164,7 @@ const SalesUploadPage = () => {
               <Descriptions.Item label="일자별 매출">매출 추이·매장 비교·손익 (필수)</Descriptions.Item>
               <Descriptions.Item label="상품별 매출">메뉴 순위·메뉴 원가율</Descriptions.Item>
               <Descriptions.Item label="시간별 매출">시간대별 매장 비교 · <b>하루 단위</b>(시작일=종료일)로 받으면 날짜별로 볼 수 있어요. 여러 날 파일을 한 번에 올려도 됩니다.</Descriptions.Item>
+              <Descriptions.Item label="일자별 상품 매출">상품 판매 추이(샐러드 등) · <b>매장을 하나씩</b> 선택해 월 단위로. 필요한 상품만 골라 받아도 됩니다.</Descriptions.Item>
               <Descriptions.Item label="매장별 일자 매출">월 단위 일자 매출 (일자별 대신 사용 가능)</Descriptions.Item>
             </Descriptions>
             <Alert
@@ -191,7 +192,14 @@ const SalesUploadPage = () => {
             )}
           </Card>
         </Col>
-        <Col xs={24} lg={16}>
+        <Col xs={24} lg={8}>
+          <Card size="small" title="일자별 상품 매출">
+            {overview?.productDaily?.length ? overview.productDaily.map((c) => (
+              <div key={c.store}><Text strong>{c.store}</Text> <Text>{c.min_date} ~ {c.max_date}</Text></div>
+            )) : <Text type="secondary">아직 없습니다</Text>}
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
           <Card size="small" title="상품별 매출">
             <Table size="small" rowKey={(d) => `${d.period_start}${d.period_end}${d.store}`} pagination={false}
               columns={datasetColumns('products')} dataSource={overview?.products || []}

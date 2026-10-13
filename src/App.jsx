@@ -13,6 +13,7 @@ import InventoryAnalyticsDashboard from './pages/InventoryAnalyticsDashboard';
 import MenuPricingPage from './pages/MenuPricingPage';
 import SalesReportPage from './pages/sales/SalesReportPage';
 import SalesUploadPage from './pages/sales/SalesUploadPage';
+import ProductTrendPage from './pages/sales/ProductTrendPage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
                     <Route path="/transactions" element={<TransactionsPage />} />
                     <Route path="/sales" element={<SalesReportPage />} />
                     <Route path="/sales/upload" element={<SalesUploadPage />} />
+                    <Route path="/sales/product-trend" element={<ProductTrendPage />} />
                     {/* 예전 주소: 홈과 같은 화면이었으므로 매출 리포트로 연결 */}
                     <Route path="/analytics" element={<Navigate to="/sales" replace />} />
                   </Routes>

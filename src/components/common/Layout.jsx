@@ -15,6 +15,7 @@ import {
   LineChartOutlined,
   UploadOutlined,
   WalletOutlined,
+  ShoppingOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = AntLayout;
@@ -37,6 +38,7 @@ const Layout = ({ children }) => {
       label: '매출',
       children: [
         { key: '/sales', icon: <LineChartOutlined />, label: '매출 리포트' },
+        { key: '/sales/product-trend', icon: <ShoppingOutlined />, label: '상품 판매 추이' },
         { key: '/sales/upload', icon: <UploadOutlined />, label: '매출 업로드' },
         { key: '/menu-pricing', icon: <TagsOutlined />, label: '메뉴 단가·원가' },
       ],
