@@ -51,15 +51,22 @@ const TransactionsPage = () => {
 
   // 기본 단가 설정 (localStorage에서 불러오기)
   const getDefaultPrices = () => {
-    const saved = localStorage.getItem('milkPrices');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    return {
+    const defaults = {
       우유: 2300,
       락토프리: 2950,
       휘핑크림: 10500,
+      연유: 4600,
     };
+    try {
+      const saved = localStorage.getItem('milkPrices');
+      if (saved) {
+        // 기존에 저장된 단가는 유지하고, 새로 추가된 품목(연유 등)만 기본값으로 채움
+        return { ...defaults, ...JSON.parse(saved) };
+      }
+    } catch (e) {
+      console.error('저장된 단가 불러오기 실패:', e);
+    }
+    return defaults;
   };
 
   const [defaultPrices, setDefaultPrices] = useState(getDefaultPrices());
@@ -163,6 +170,7 @@ const TransactionsPage = () => {
       milk_quantity: 0,
       lacto_quantity: 0,
       cream_quantity: 0,
+      condensed_quantity: 0,
       amount: 0
     });
     setModalVisible(true);
@@ -773,11 +781,12 @@ const TransactionsPage = () => {
                       milk_quantity: 0,
                       lacto_quantity: 0,
                       cream_quantity: 0,
+                      condensed_quantity: 0,
                       amount: 0
                     });
                   }}
                 >
-                  일괄 입력 (우유+락토프리+휘핑크림)
+                  일괄 입력 (우유+락토프리+휘핑크림+연유)
                 </Button>
                 <Button
                   type={manualAmountMode === 'auto' ? 'primary' : 'default'}
@@ -826,6 +835,7 @@ const TransactionsPage = () => {
                       <Select.Option value="우유">우유 ({defaultPrices['우유'].toLocaleString()}원)</Select.Option>
                       <Select.Option value="락토프리">락토프리 ({defaultPrices['락토프리'].toLocaleString()}원)</Select.Option>
                       <Select.Option value="휘핑크림">휘핑크림 ({defaultPrices['휘핑크림'].toLocaleString()}원)</Select.Option>
+                      <Select.Option value="연유">연유 ({defaultPrices['연유'].toLocaleString()}원)</Select.Option>
                     </Select>
                   </Form.Item>
 
@@ -895,7 +905,7 @@ const TransactionsPage = () => {
                   </Card>
 
                   <Row gutter={16}>
-                    <Col span={8}>
+                    <Col span={6}>
                       <Form.Item
                         name="milk_quantity"
                         label={`우유 (${defaultPrices['우유'].toLocaleString()}원)`}
@@ -908,13 +918,14 @@ const TransactionsPage = () => {
                             const milk = form.getFieldValue('milk_quantity') || 0;
                             const lacto = form.getFieldValue('lacto_quantity') || 0;
                             const cream = form.getFieldValue('cream_quantity') || 0;
-                            const total = (milk * defaultPrices['우유']) + (lacto * defaultPrices['락토프리']) + (cream * defaultPrices['휘핑크림']);
+                            const condensed = form.getFieldValue('condensed_quantity') || 0;
+                            const total = (milk * defaultPrices['우유']) + (lacto * defaultPrices['락토프리']) + (cream * defaultPrices['휘핑크림']) + (condensed * defaultPrices['연유']);
                             form.setFieldsValue({ amount: total });
                           }}
                         />
                       </Form.Item>
                     </Col>
-                    <Col span={8}>
+                    <Col span={6}>
                       <Form.Item
                         name="lacto_quantity"
                         label={`락토프리 (${defaultPrices['락토프리'].toLocaleString()}원)`}
@@ -927,13 +938,14 @@ const TransactionsPage = () => {
                             const milk = form.getFieldValue('milk_quantity') || 0;
                             const lacto = form.getFieldValue('lacto_quantity') || 0;
                             const cream = form.getFieldValue('cream_quantity') || 0;
-                            const total = (milk * defaultPrices['우유']) + (lacto * defaultPrices['락토프리']) + (cream * defaultPrices['휘핑크림']);
+                            const condensed = form.getFieldValue('condensed_quantity') || 0;
+                            const total = (milk * defaultPrices['우유']) + (lacto * defaultPrices['락토프리']) + (cream * defaultPrices['휘핑크림']) + (condensed * defaultPrices['연유']);
                             form.setFieldsValue({ amount: total });
                           }}
                         />
                       </Form.Item>
                     </Col>
-                    <Col span={8}>
+                    <Col span={6}>
                       <Form.Item
                         name="cream_quantity"
                         label={`휘핑크림 (${defaultPrices['휘핑크림'].toLocaleString()}원)`}
@@ -946,7 +958,28 @@ const TransactionsPage = () => {
                             const milk = form.getFieldValue('milk_quantity') || 0;
                             const lacto = form.getFieldValue('lacto_quantity') || 0;
                             const cream = form.getFieldValue('cream_quantity') || 0;
-                            const total = (milk * defaultPrices['우유']) + (lacto * defaultPrices['락토프리']) + (cream * defaultPrices['휘핑크림']);
+                            const condensed = form.getFieldValue('condensed_quantity') || 0;
+                            const total = (milk * defaultPrices['우유']) + (lacto * defaultPrices['락토프리']) + (cream * defaultPrices['휘핑크림']) + (condensed * defaultPrices['연유']);
+                            form.setFieldsValue({ amount: total });
+                          }}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                      <Form.Item
+                        name="condensed_quantity"
+                        label={`연유 (${defaultPrices['연유'].toLocaleString()}원)`}
+                      >
+                        <InputNumber
+                          min={0}
+                          style={{ width: '100%' }}
+                          placeholder="수량"
+                          onChange={() => {
+                            const milk = form.getFieldValue('milk_quantity') || 0;
+                            const lacto = form.getFieldValue('lacto_quantity') || 0;
+                            const cream = form.getFieldValue('cream_quantity') || 0;
+                            const condensed = form.getFieldValue('condensed_quantity') || 0;
+                            const total = (milk * defaultPrices['우유']) + (lacto * defaultPrices['락토프리']) + (cream * defaultPrices['휘핑크림']) + (condensed * defaultPrices['연유']);
                             form.setFieldsValue({ amount: total });
                           }}
                         />
@@ -1225,6 +1258,21 @@ const TransactionsPage = () => {
               parser={value => value.replace(/,/g, '')}
               style={{ width: '100%' }}
               placeholder="10500"
+              addonAfter="원"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="연유"
+            label="연유 (기본 단가)"
+            rules={[{ required: true, message: '연유 단가를 입력하세요' }]}
+          >
+            <InputNumber
+              min={0}
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/,/g, '')}
+              style={{ width: '100%' }}
+              placeholder="4600"
               addonAfter="원"
             />
           </Form.Item>
