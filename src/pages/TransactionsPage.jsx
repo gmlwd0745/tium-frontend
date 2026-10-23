@@ -18,6 +18,7 @@ import {
   Col,
   Statistic,
   Tag,
+  Checkbox,
 } from 'antd';
 import {
   PlusOutlined,
@@ -171,7 +172,8 @@ const TransactionsPage = () => {
       lacto_quantity: 0,
       cream_quantity: 0,
       condensed_quantity: 0,
-      amount: 0
+      amount: 0,
+      is_tax_free: true,
     });
     setModalVisible(true);
   };
@@ -181,6 +183,7 @@ const TransactionsPage = () => {
     form.setFieldsValue({
       ...record,
       transaction_date: dayjs(record.transaction_date),
+      is_tax_free: record.tax_type !== '과세',
     });
     setModalVisible(true);
   };
@@ -224,11 +227,13 @@ const TransactionsPage = () => {
         description = `${values.item_name} ${values.quantity}개`;
       }
 
-      // transaction_month 제외하고 필드 추출
-      const { transaction_month, ...restValues } = values;
+      // transaction_month, is_tax_free 제외하고 필드 추출
+      const { transaction_month, is_tax_free, ...restValues } = values;
 
       const data = {
         ...restValues,
+        // 우유 거래처: '면세' 체크 여부로 면세/과세 지정 (체크 해제 시 과세)
+        ...(values.client === '우유' ? { tax_type_override: is_tax_free === false ? '과세' : '면세' } : {}),
         transaction_date: values.transaction_date.format('YYYY-MM-DD'),
         description,
       };
@@ -825,7 +830,7 @@ const TransactionsPage = () => {
                     <Select
                       onChange={(value) => {
                         // 품목 선택시 기본 단가 자동 입력
-                        form.setFieldsValue({ unit_price: defaultPrices[value] });
+                        form.setFieldsValue({ unit_price: defaultPrices[value], is_tax_free: value !== '휘핑크림' });
                         const quantity = form.getFieldValue('quantity');
                         if (quantity) {
                           form.setFieldsValue({ amount: quantity * defaultPrices[value] });
@@ -1024,6 +1029,14 @@ const TransactionsPage = () => {
                   </Form.Item>
                 </>
               )}
+
+              <Form.Item
+                name="is_tax_free"
+                valuePropName="checked"
+                extra="휘핑크림 등 과세 품목은 체크를 해제하세요 (해제 시 금액을 1.1로 나눠 공급가액/부가세 계산)"
+              >
+                <Checkbox>면세</Checkbox>
+              </Form.Item>
             </>
           )}
 
