@@ -56,6 +56,22 @@ const InventoryCountSheetPage = () => {
   const [mode, setMode] = useState('print');
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  // 정렬 기준: 'supplier'(발주처별) | 'category'(카테고리별) — 마지막 선택을 기억
+  const [groupBy, setGroupByState] = useState(() => {
+    try {
+      return localStorage.getItem('tium-count-groupby') || 'supplier';
+    } catch {
+      return 'supplier';
+    }
+  });
+  const setGroupBy = (v) => {
+    setGroupByState(v);
+    try {
+      localStorage.setItem('tium-count-groupby', v);
+    } catch {
+      /* 무시 */
+    }
+  };
   const [supplierMap, setSupplierMap] = useState(new Map()); // 품목 마스터: 품목명 → 발주처
   const [blind, setBlind] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -156,34 +172,48 @@ const InventoryCountSheetPage = () => {
     [records, supplierMap],
   );
 
-  // 카테고리 → 품목명 순으로 정렬하고 인쇄·입력에 같은 번호를 붙인다
+  // 발주처(또는 카테고리) → 품목명 순으로 정렬하고 인쇄·입력에 같은 번호를 붙인다
   const rows = useMemo(() => {
     const visible = records.filter(
       (r) =>
         (categories.length === 0 || categories.includes(r.category || '기타')) &&
         (suppliers.length === 0 || suppliers.includes(supplierOf(r) || '미지정')),
     );
+    const catIdx = (r) => allCategories.indexOf(r.category || '기타');
+    const supKey = (r) => supplierOf(r) || '미지정';
+    const cmpSup = (a, b) => {
+      const sa = supKey(a);
+      const sb = supKey(b);
+      if (sa === sb) return 0;
+      if (sa === '미지정') return 1; // 발주처 없는 품목은 맨 뒤
+      if (sb === '미지정') return -1;
+      return sa.localeCompare(sb, 'ko');
+    };
     const sorted = [...visible].sort((a, b) => {
-      const ca = allCategories.indexOf(a.category || '기타');
-      const cb = allCategories.indexOf(b.category || '기타');
-      if (ca !== cb) return ca - cb;
+      if (groupBy === 'supplier') {
+        const s1 = cmpSup(a, b);
+        if (s1 !== 0) return s1;
+        if (catIdx(a) !== catIdx(b)) return catIdx(a) - catIdx(b);
+      } else {
+        if (catIdx(a) !== catIdx(b)) return catIdx(a) - catIdx(b);
+      }
       return (a.item_name || '').localeCompare(b.item_name || '', 'ko');
     });
     return sorted.map((r, i) => {
       const prev = num(r.previous_stock);
       const intake = num(r.current_intake);
       const book = num(r.current_stock);
-      return { ...r, no: i + 1, _prev: prev, _intake: intake, _book: book, _cat: r.category || '기타', _sup: supplierOf(r) };
+      return { ...r, no: i + 1, _prev: prev, _intake: intake, _book: book, _cat: r.category || '기타', _sup: supplierOf(r), _group: groupBy === 'supplier' ? supKey(r) : r.category || '기타' };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [records, categories, suppliers, allCategories, supplierMap]);
+  }, [records, categories, suppliers, allCategories, supplierMap, groupBy]);
 
   const grouped = useMemo(() => {
     const g = [];
     rows.forEach((r) => {
       const last = g[g.length - 1];
-      if (last && last.category === r._cat) last.items.push(r);
-      else g.push({ category: r._cat, items: [r] });
+      if (last && last.key === r._group) last.items.push(r);
+      else g.push({ key: r._group, items: [r] });
     });
     return g;
   }, [rows]);
@@ -393,6 +423,18 @@ const InventoryCountSheetPage = () => {
           />
           <Select value={store} onChange={setStore} style={{ width: 100 }} options={STORES.map((s) => ({ value: s, label: s }))} />
           <DatePicker picker="month" value={month} onChange={(v) => v && setMonth(v)} allowClear={false} format="YYYY년 MM월" />
+          <Space size={4}>
+            <Text type="secondary">정렬</Text>
+            <Segmented
+              size="small"
+              value={groupBy}
+              onChange={setGroupBy}
+              options={[
+                { label: '발주처별', value: 'supplier' },
+                { label: '카테고리별', value: 'category' },
+              ]}
+            />
+          </Space>
           <Select
             mode="multiple"
             allowClear
@@ -488,7 +530,7 @@ const InventoryCountSheetPage = () => {
                 <tr>
                   <th>No</th>
                   <th>품목</th>
-                  <th>발주처</th>
+                  <th>{groupBy === 'supplier' ? '구분' : '발주처'}</th>
                   <th>단위</th>
                   {!blind && <th>전달재고</th>}
                   {!blind && <th>당월입고</th>}
@@ -498,15 +540,15 @@ const InventoryCountSheetPage = () => {
                 </tr>
               </thead>
               {grouped.map((g) => (
-                <tbody key={g.category}>
+                <tbody key={g.key}>
                   <tr className="cs-cat">
-                    <td colSpan={blind ? 6 : 9}>{g.category} ({g.items.length})</td>
+                    <td colSpan={blind ? 6 : 9}>{g.key} ({g.items.length})</td>
                   </tr>
                   {g.items.map((r) => (
                     <tr key={r.id}>
                       <td className="c">{r.no}</td>
                       <td>{r.item_name}</td>
-                      <td className="cs-sup">{r._sup}</td>
+                      <td className="cs-sup">{groupBy === 'supplier' ? r._cat : r._sup}</td>
                       <td className="c">{r.unit || ''}</td>
                       {!blind && <td className="r">{fmt(r._prev)}</td>}
                       {!blind && <td className="r">{fmt(r._intake)}</td>}
