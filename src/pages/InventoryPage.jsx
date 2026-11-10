@@ -219,7 +219,8 @@ const InventoryPage = () => {
   const handleSubmit = async (values) => {
     try {
       if (editingItem) {
-        await inventoryAPI.update(editingItem.id, values);
+        // 폼에 없는 칸이 비워지지 않도록 기존 값 위에 수정한 값을 덮어서 보냄
+        await inventoryAPI.update(editingItem.id, { ...editingItem, ...values });
         message.success('재고 항목이 수정되었습니다.');
       } else {
         await inventoryAPI.create(values);
@@ -1297,7 +1298,7 @@ const InventoryPage = () => {
         title={editingItem ? '재고 수정' : '재고 등록'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
-        onOk={() => form.submit()}
+        onOk={() => modalForm.submit()}
         width={700}
       >
         <Form
