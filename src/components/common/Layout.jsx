@@ -16,6 +16,7 @@ import {
   UploadOutlined,
   WalletOutlined,
   ShoppingOutlined,
+  PrinterOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = AntLayout;
@@ -59,6 +60,7 @@ const Layout = ({ children }) => {
       label: '재고',
       children: [
         { key: '/inventory', icon: <InboxOutlined />, label: '재고 관리' },
+        { key: '/inventory/count-sheet', icon: <PrinterOutlined />, label: '재고 실사표' },
         { key: '/inventory-analytics', icon: <BarChartOutlined />, label: '재고 분석' },
       ],
     },

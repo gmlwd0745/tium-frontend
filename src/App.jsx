@@ -11,6 +11,7 @@ import ExpensesPage from './pages/ExpensesPage';
 import TransactionsPage from './pages/TransactionsPage';
 import InventoryAnalyticsDashboard from './pages/InventoryAnalyticsDashboard';
 import MenuPricingPage from './pages/MenuPricingPage';
+import InventoryCountSheetPage from './pages/inventory/InventoryCountSheetPage';
 import SalesReportPage from './pages/sales/SalesReportPage';
 import SalesUploadPage from './pages/sales/SalesUploadPage';
 import ProductTrendPage from './pages/sales/ProductTrendPage';
@@ -31,6 +32,7 @@ function App() {
                     <Route path="/orders" element={<OrdersPage />} />
                     <Route path="/inventory" element={<InventoryPage />} />
                     <Route path="/inventory-analytics" element={<InventoryAnalyticsDashboard />} />
+                    <Route path="/inventory/count-sheet" element={<InventoryCountSheetPage />} />
                     <Route path="/expenses" element={<ExpensesPage />} />
                     <Route path="/menu-pricing" element={<MenuPricingPage />} />
                     <Route path="/transactions" element={<TransactionsPage />} />
