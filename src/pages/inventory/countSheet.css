@@ -1,0 +1,64 @@
+/* ── 재고 실사표 (화면 미리보기 + 인쇄) ── */
+.count-sheet {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 28px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  color: #222;
+  font-size: 13px;
+}
+.count-sheet .cs-head { margin-bottom: 12px; }
+.count-sheet .cs-title { font-size: 20px; font-weight: 700; }
+.count-sheet .cs-sub { color: #555; margin: 4px 0 10px; }
+.count-sheet table { width: 100%; border-collapse: collapse; }
+.count-sheet .cs-sign th,
+.count-sheet .cs-sign td { border: 1px solid #888; padding: 6px 8px; height: 30px; }
+.count-sheet .cs-sign th { background: #f3f3f3; width: 10%; font-weight: 600; white-space: nowrap; }
+.count-sheet .cs-table { table-layout: fixed; }
+.count-sheet .cs-table th,
+.count-sheet .cs-table td { border: 1px solid #888; padding: 4px 6px; height: 28px; word-break: keep-all; }
+.count-sheet .cs-table thead th { background: #eef3ea; font-weight: 600; text-align: center; }
+.count-sheet .cs-table .cs-cat td { background: #f6f6f6; font-weight: 700; }
+.count-sheet .cs-table td.c { text-align: center; }
+.count-sheet .cs-table td.r { text-align: right; color: #444; }
+.count-sheet .cs-table td.cs-write { background: #fffef2; }
+.count-sheet .cs-foot { margin-top: 10px; font-size: 11px; color: #888; text-align: right; }
+
+.count-sheet-page .cs-row-done td { background: #f6ffed; }
+
+@media print {
+  @page { size: A4 portrait; margin: 12mm 10mm; }
+
+  /* 이 페이지를 인쇄할 때만 관리자 메뉴·상단바를 숨김 */
+  body:has(.count-sheet-page) .ant-layout-sider,
+  body:has(.count-sheet-page) .ant-layout-header,
+  .count-sheet-page .no-print { display: none !important; }
+  body:has(.count-sheet-page) .ant-layout,
+  body:has(.count-sheet-page) .ant-layout-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    min-height: 0 !important;
+  }
+
+  .count-sheet {
+    max-width: none;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    font-size: 11pt;
+  }
+  .count-sheet .cs-table thead { display: table-header-group; } /* 페이지마다 머리글 반복 */
+  .count-sheet .cs-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .count-sheet .cs-table th,
+  .count-sheet .cs-table td { height: 7.5mm; }
+  .count-sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* 전역 가운데 정렬 무시 */
+.count-sheet-page { text-align: left; }
+.count-sheet .cs-head { text-align: center; }
+.count-sheet .cs-table td { text-align: left; }
+.count-sheet .cs-table .cs-cat td { text-align: left; }
