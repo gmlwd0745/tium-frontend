@@ -20,7 +20,7 @@ import {
 } from 'antd';
 import { PrinterOutlined, SaveOutlined, ReloadOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { inventoryAPI } from '../../services/api';
+import { inventoryAPI, productsAPI } from '../../services/api';
 import './countSheet.css';
 
 const { Text } = Typography;
@@ -41,6 +41,7 @@ const recordTime = (r) => {
   const d = r.date ? dayjs(r.date) : null;
   return d && d.isValid() ? d.valueOf() : 0;
 };
+const normName = (v) => (v || '').toString().replace(/\s+/g, '').toLowerCase();
 const draftKey = (store, month) => `tium-count-draft:${store}:${month}`;
 
 /**
@@ -54,6 +55,8 @@ const InventoryCountSheetPage = () => {
   const [month, setMonth] = useState(dayjs());
   const [mode, setMode] = useState('print');
   const [categories, setCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [supplierMap, setSupplierMap] = useState(new Map()); // 품목 마스터: 품목명 → 발주처
   const [blind, setBlind] = useState(false);
   const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState([]);
@@ -103,6 +106,20 @@ const InventoryCountSheetPage = () => {
     }
   };
 
+  // 재고 기록에 발주처가 비어 있으면 품목 마스터의 발주처로 보여준다 (화면 표시만, 저장값은 그대로)
+  useEffect(() => {
+    productsAPI
+      .getAll()
+      .then((res) => {
+        const m = new Map();
+        (Array.isArray(res.data) ? res.data : []).forEach((p) => {
+          if (p.supplier && !m.has(normName(p.item_name))) m.set(normName(p.item_name), p.supplier);
+        });
+        setSupplierMap(m);
+      })
+      .catch((e) => console.error('품목 마스터 조회 실패:', e));
+  }, []);
+
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,9 +148,21 @@ const InventoryCountSheetPage = () => {
     });
   }, [records]);
 
+  const supplierOf = (r) => (r.supplier || '').trim() || supplierMap.get(normName(r.item_name)) || '';
+
+  const allSuppliers = useMemo(
+    () => [...new Set(records.map((r) => supplierOf(r) || '미지정'))].sort((a, b) => a.localeCompare(b, 'ko')),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [records, supplierMap],
+  );
+
   // 카테고리 → 품목명 순으로 정렬하고 인쇄·입력에 같은 번호를 붙인다
   const rows = useMemo(() => {
-    const visible = records.filter((r) => categories.length === 0 || categories.includes(r.category || '기타'));
+    const visible = records.filter(
+      (r) =>
+        (categories.length === 0 || categories.includes(r.category || '기타')) &&
+        (suppliers.length === 0 || suppliers.includes(supplierOf(r) || '미지정')),
+    );
     const sorted = [...visible].sort((a, b) => {
       const ca = allCategories.indexOf(a.category || '기타');
       const cb = allCategories.indexOf(b.category || '기타');
@@ -144,9 +173,10 @@ const InventoryCountSheetPage = () => {
       const prev = num(r.previous_stock);
       const intake = num(r.current_intake);
       const book = num(r.current_stock);
-      return { ...r, no: i + 1, _prev: prev, _intake: intake, _book: book, _cat: r.category || '기타' };
+      return { ...r, no: i + 1, _prev: prev, _intake: intake, _book: book, _cat: r.category || '기타', _sup: supplierOf(r) };
     });
-  }, [records, categories, allCategories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [records, categories, suppliers, allCategories, supplierMap]);
 
   const grouped = useMemo(() => {
     const g = [];
@@ -264,6 +294,7 @@ const InventoryCountSheetPage = () => {
     { title: 'No', dataIndex: 'no', width: 56, align: 'center' },
     { title: '구분', dataIndex: '_cat', width: 96, render: (v) => <Tag>{v}</Tag> },
     { title: '품목', dataIndex: 'item_name', ellipsis: true },
+    { title: '발주처', dataIndex: '_sup', width: 110, ellipsis: true, render: (v) => v || <Text type="secondary">-</Text> },
     { title: '단위', dataIndex: 'unit', width: 70, align: 'center' },
     { title: '전달재고', dataIndex: '_prev', width: 90, align: 'right', render: fmt },
     { title: '당월입고', dataIndex: '_intake', width: 90, align: 'right', render: fmt },
@@ -372,6 +403,16 @@ const InventoryCountSheetPage = () => {
             options={allCategories.map((c) => ({ value: c, label: c }))}
             maxTagCount="responsive"
           />
+          <Select
+            mode="multiple"
+            allowClear
+            placeholder="전체 발주처"
+            value={suppliers}
+            onChange={setSuppliers}
+            style={{ minWidth: 180 }}
+            options={allSuppliers.map((c) => ({ value: c, label: c }))}
+            maxTagCount="responsive"
+          />
           <Button icon={<ReloadOutlined />} onClick={fetchData}>새로고침</Button>
           {mode === 'print' ? (
             <>
@@ -418,7 +459,8 @@ const InventoryCountSheetPage = () => {
               <div className="cs-title">🌱 틔움 재고 실사표</div>
               <div className="cs-sub">
                 {store}점 · {month.format('YYYY년 M월')}
-                {categories.length > 0 && ` · ${categories.join(', ')}`} · 총 {rows.length}품목
+                {categories.length > 0 && ` · ${categories.join(', ')}`}
+                {suppliers.length > 0 && ` · 발주처: ${suppliers.join(', ')}`} · 총 {rows.length}품목
               </div>
               <table className="cs-sign">
                 <tbody>
@@ -432,19 +474,21 @@ const InventoryCountSheetPage = () => {
             </div>
             <table className="cs-table">
               <colgroup>
-                <col style={{ width: '6%' }} />
+                <col style={{ width: '5%' }} />
                 <col />
-                <col style={{ width: '8%' }} />
-                {!blind && <col style={{ width: '9%' }} />}
-                {!blind && <col style={{ width: '9%' }} />}
-                {!blind && <col style={{ width: '9%' }} />}
                 <col style={{ width: '13%' }} />
-                <col style={{ width: '17%' }} />
+                <col style={{ width: '7%' }} />
+                {!blind && <col style={{ width: '8%' }} />}
+                {!blind && <col style={{ width: '8%' }} />}
+                {!blind && <col style={{ width: '8%' }} />}
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '14%' }} />
               </colgroup>
               <thead>
                 <tr>
                   <th>No</th>
                   <th>품목</th>
+                  <th>발주처</th>
                   <th>단위</th>
                   {!blind && <th>전달재고</th>}
                   {!blind && <th>당월입고</th>}
@@ -456,12 +500,13 @@ const InventoryCountSheetPage = () => {
               {grouped.map((g) => (
                 <tbody key={g.category}>
                   <tr className="cs-cat">
-                    <td colSpan={blind ? 5 : 8}>{g.category} ({g.items.length})</td>
+                    <td colSpan={blind ? 6 : 9}>{g.category} ({g.items.length})</td>
                   </tr>
                   {g.items.map((r) => (
                     <tr key={r.id}>
                       <td className="c">{r.no}</td>
                       <td>{r.item_name}</td>
+                      <td className="cs-sup">{r._sup}</td>
                       <td className="c">{r.unit || ''}</td>
                       {!blind && <td className="r">{fmt(r._prev)}</td>}
                       {!blind && <td className="r">{fmt(r._intake)}</td>}
@@ -494,7 +539,7 @@ const InventoryCountSheetPage = () => {
               columns={inputColumns}
               dataSource={rows}
               pagination={false}
-              scroll={{ x: 1000 }}
+              scroll={{ x: 1110 }}
               rowClassName={(r) => (counts[r.id] !== undefined && counts[r.id] !== null ? 'cs-row-done' : '')}
             />
           </div>
