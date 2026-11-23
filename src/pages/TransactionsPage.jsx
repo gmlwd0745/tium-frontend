@@ -280,7 +280,7 @@ const TransactionsPage = () => {
 
     // 임포트 전에 매장 선택하도록 모달 표시
     Modal.confirm({
-      title: '세금계산서(거래내역) 엑셀 임포트',
+      title: '거래내역(세금계산서) 엑셀 임포트',
       content: (
         <div>
           <p style={{ marginBottom: 12 }}>파일: <strong>{file.name}</strong></p>
@@ -351,7 +351,9 @@ const TransactionsPage = () => {
           '드시모네': 'cyan',
           '기타': 'default',
         };
-        return <Tag color={colorMap[client] || 'default'}>{client}</Tag>;
+        // 저장값 'GS 리테일'은 그대로 두고 화면에는 '이스턴웰스'로 표시
+        const displayName = client === 'GS 리테일' ? '이스턴웰스' : client;
+        return <Tag color={colorMap[client] || 'default'}>{displayName}</Tag>;
       },
     },
     {
@@ -454,7 +456,7 @@ const TransactionsPage = () => {
   return (
     <div>
       <Card
-        title="🔍 세금계산서(거래내역) 필터"
+        title="🔍 거래내역(세금계산서) 필터"
         size="small"
         style={{
           marginBottom: 16,
@@ -517,7 +519,7 @@ const TransactionsPage = () => {
               <Select.Option value="우유">우유</Select.Option>
               <Select.Option value="원두">원두</Select.Option>
               <Select.Option value="아싸컴퍼니">아싸컴퍼니</Select.Option>
-              <Select.Option value="GS 리테일">GS 리테일</Select.Option>
+              <Select.Option value="GS 리테일">이스턴웰스</Select.Option>
               <Select.Option value="베이커리(하이푸디)">베이커리(하이푸디)</Select.Option>
               <Select.Option value="드시모네">드시모네</Select.Option>
               <Select.Option value="기타">기타</Select.Option>
@@ -574,7 +576,7 @@ const TransactionsPage = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="GS 리테일"
+              title="이스턴웰스"
               value={stats.gs}
               suffix="원"
               valueStyle={{ color: '#722ed1' }}
@@ -767,7 +769,7 @@ const TransactionsPage = () => {
               <Select.Option value="우유">우유</Select.Option>
               <Select.Option value="원두">원두</Select.Option>
               <Select.Option value="아싸컴퍼니">아싸컴퍼니</Select.Option>
-              <Select.Option value="GS 리테일">GS 리테일</Select.Option>
+              <Select.Option value="GS 리테일">이스턴웰스</Select.Option>
               <Select.Option value="베이커리(하이푸디)">베이커리(하이푸디)</Select.Option>
               <Select.Option value="드시모네">드시모네</Select.Option>
               <Select.Option value="기타">기타</Select.Option>
