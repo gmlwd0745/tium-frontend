@@ -50,7 +50,7 @@ const Layout = ({ children }) => {
       label: '매입·비용',
       children: [
         { key: '/orders', icon: <ShoppingCartOutlined />, label: '발주 관리' },
-        { key: '/transactions', icon: <TransactionOutlined />, label: '세금계산서(거래내역)' },
+        { key: '/transactions', icon: <TransactionOutlined />, label: '거래내역(세금계산서)' },
         { key: '/expenses', icon: <CreditCardOutlined />, label: '법인카드' },
       ],
     },
